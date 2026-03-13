@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  # postgres DB service
+  database:
+    image: postgres:16.1-alpine3.18
+    container_name: nest-database #host
+    restart: always
+    ports:
+      - ${DB_FORWARD_PORT:-5432}:5432
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - nest-docker-network
+
+
+  #pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: nest-pgadmin
+    restart: always
+    ports:
+      - ${PGADMIN_FORWARD_PORT:-8888}:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - nest-docker-network
+
+  rabbitmq:
+    container_name: nest-application-rabbitmq
+    image: 'rabbitmq:3-management-alpine'
+    restart: always
+    ports:
+      - '${RABBITMQ_FORWARD_PORT:-5673}:5672'
+      - '${RABBITMQ_MANAGEMENT_FORWARD_PORT:-15673}:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq/
+      - rabbitmq_logs:/var/log/rabbitmq
+    networks:
+      - nest-docker-network
+  
+networks:
+  nest-docker-network:
+    name: nest-shared-network
+    external: true
+
+volumes:
+  pg_data: {}
+  pgadmin_data: {}
+  rabbitmq: {}
+  rabbitmq_logs: {}
+
+#docker network create nest-shared-network
